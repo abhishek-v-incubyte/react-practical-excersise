@@ -36,6 +36,49 @@ export const Primary: Story = {
   },
 };
 
+// With error
+export const WithError: Story = {
+  args: {
+    label: "Email Address",
+    name: "email",
+    type: "email",
+    error: "Please enter a valid email address",
+    value: "invalid-email",
+  },
+};
+
+// With helper text
+export const WithHelperText: Story = {
+  args: {
+    label: "Password",
+    name: "password",
+    type: "password",
+    helperText: "Must be at least 8 characters",
+  },
+};
+
+// Required field
+export const Required: Story = {
+  args: {
+    label: "Username",
+    name: "username",
+    type: "text",
+    required: true,
+    placeholder: "Choose a username",
+  },
+};
+
+// Disabled state
+export const Disabled: Story = {
+  args: {
+    label: "Email Address",
+    name: "email",
+    type: "email",
+    value: "user@example.com",
+    disabled: true,
+  },
+};
+
 // Email input story
 export const Email: Story = {
   args: {
@@ -52,15 +95,5 @@ export const Password: Story = {
     label: "Password",
     name: "password",
     type: "password",
-  },
-};
-
-// Required field story
-export const Required: Story = {
-  args: {
-    label: "Required Field",
-    name: "required",
-    type: "text",
-    required: true,
   },
 };

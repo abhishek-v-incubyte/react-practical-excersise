@@ -27,11 +27,21 @@ export const InputField: React.FC<InputFieldProps> = ({
         className={`input-field ${
           error ? "input-field--error" : ""
         } ${className}`}
+        aria-invalid={error ? "true" : "false"}
+        aria-describedby={
+          error ? `${name}-error` : helperText ? `${name}-helper` : undefined
+        }
         {...inputProps}
       />
-      {error && <span className="input-field-error">{error}</span>}
+      {error && (
+        <span id={`${name}-error`} className="input-field-error" role="alert">
+          {error}
+        </span>
+      )}
       {helperText && !error && (
-        <span className="input-field-helper">{helperText}</span>
+        <span id={`${name}-helper`} className="input-field-helper">
+          {helperText}
+        </span>
       )}
     </div>
   );

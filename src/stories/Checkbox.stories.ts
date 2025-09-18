@@ -29,3 +29,40 @@ export const Primary: Story = {
     name: "terms",
   },
 };
+
+// With error
+export const WithError: Story = {
+  args: {
+    label: "I agree to the terms and conditions",
+    name: "terms",
+    error: "You must accept the terms to continue",
+  },
+};
+
+// Checked state
+export const Checked: Story = {
+  args: {
+    label: "Remember me",
+    name: "remember",
+    checked: true,
+  },
+};
+
+// Disabled state
+export const Disabled: Story = {
+  args: {
+    label: "Disabled option",
+    name: "disabled",
+    disabled: true,
+  },
+};
+
+// Disabled and checked
+export const DisabledChecked: Story = {
+  args: {
+    label: "Locked selection",
+    name: "locked",
+    disabled: true,
+    checked: true,
+  },
+};
