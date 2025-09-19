@@ -85,128 +85,173 @@ export const Tabs: React.FC<TabsProps> = ({
   const activeTab = tabs.find((tab) => tab.id === activeTabId);
 
   return (
-    <div className={`tabs-container ${className}`}>
-      <div
-        role="tablist"
-        aria-orientation={orientation}
-        className={`tabs-list tabs-list--${orientation}`}
-        style={{
-          display: "flex",
-          flexDirection: orientation === "vertical" ? "column" : "row",
-          gap: "4px",
-          borderBottom:
-            orientation === "horizontal" ? "1px solid #e0e0e0" : "none",
-          borderRight:
-            orientation === "vertical" ? "1px solid #e0e0e0" : "none",
-          marginBottom: orientation === "horizontal" ? "16px" : "0",
-          marginRight: orientation === "vertical" ? "16px" : "0",
-          paddingBottom: orientation === "horizontal" ? "0" : undefined,
-          paddingRight: orientation === "vertical" ? "16px" : undefined,
-        }}
-      >
-        {tabs.map((tab, index) => {
-          const isActive = tab.id === activeTabId;
-          const tabPanelId = `tabpanel-${tab.id}`;
-          const tabId = `tab-${tab.id}`;
+    <>
+      {/* Responsive styles */}
+      <style>
+        {`
+          @media (max-width: 768px) {
+            .tabs-list--horizontal {
+              overflow-x: auto !important;
+              -webkit-overflow-scrolling: touch;
+              scrollbar-width: thin;
+            }
+            .tabs-list--horizontal::-webkit-scrollbar {
+              height: 4px;
+            }
+            .tabs-list--horizontal::-webkit-scrollbar-thumb {
+              background-color: #ccc;
+              border-radius: 2px;
+            }
+            .tab-button {
+              white-space: nowrap !important;
+              flex-shrink: 0;
+            }
+            .tabs-list--vertical {
+              flex-direction: row !important;
+              border-right: none !important;
+              border-bottom: 1px solid #e0e0e0 !important;
+              margin-right: 0 !important;
+              margin-bottom: 16px !important;
+              padding-right: 0 !important;
+              overflow-x: auto !important;
+            }
+          }
+          @media (max-width: 480px) {
+            .tab-button span.tab-label {
+              font-size: 14px;
+            }
+            .tab-button {
+              padding: 6px 12px !important;
+            }
+          }
+        `}
+      </style>
 
-          return (
-            <button
-              key={tab.id}
-              ref={(el) => {
-                tabRefs.current[tab.id] = el;
-              }}
-              id={tabId}
-              role="tab"
-              aria-selected={isActive}
-              aria-controls={tabPanelId}
-              aria-disabled={tab.disabled}
-              disabled={tab.disabled}
-              tabIndex={isActive ? 0 : -1}
-              onClick={() => handleTabClick(tab.id, tab.disabled)}
-              onKeyDown={(e) => handleKeyDown(e, index)}
-              className={`tab-button ${isActive ? "tab-button--active" : ""} ${
-                tab.disabled ? "tab-button--disabled" : ""
-              }`}
-              style={{
-                padding: "8px 16px",
-                border: "none",
-                background: isActive ? "#ffffff" : "transparent",
-                cursor: tab.disabled ? "not-allowed" : "pointer",
-                opacity: tab.disabled ? 0.5 : 1,
-                borderBottom:
-                  orientation === "horizontal" && isActive
-                    ? "2px solid #1976d2"
-                    : "none",
-                borderRight:
-                  orientation === "vertical" && isActive
-                    ? "2px solid #1976d2"
-                    : "none",
-                marginBottom:
-                  orientation === "horizontal" && isActive ? "-1px" : "0",
-                marginRight:
-                  orientation === "vertical" && isActive ? "-1px" : "0",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                whiteSpace: "nowrap",
-                fontSize: "14px",
-                fontWeight: isActive ? 600 : 400,
-                color: isActive ? "#1976d2" : "#666666",
-                transition: "all 0.2s ease",
-              }}
-            >
-              {tab.icon && <span className="tab-icon">{tab.icon}</span>}
-              <span className="tab-label">{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <div className={`tabs-container ${className}`}>
+        <div
+          role="tablist"
+          aria-orientation={orientation}
+          className={`tabs-list tabs-list--${orientation}`}
+          style={{
+            display: "flex",
+            flexDirection: orientation === "vertical" ? "column" : "row",
+            gap: "4px",
+            borderBottom:
+              orientation === "horizontal" ? "1px solid #e0e0e0" : "none",
+            borderRight:
+              orientation === "vertical" ? "1px solid #e0e0e0" : "none",
+            marginBottom: orientation === "horizontal" ? "16px" : "0",
+            marginRight: orientation === "vertical" ? "16px" : "0",
+            paddingBottom: orientation === "horizontal" ? "0" : undefined,
+            paddingRight: orientation === "vertical" ? "16px" : undefined,
+          }}
+        >
+          {tabs.map((tab, index) => {
+            const isActive = tab.id === activeTabId;
+            const tabPanelId = `tabpanel-${tab.id}`;
+            const tabId = `tab-${tab.id}`;
 
-      <div
-        className="tabs-panels"
-        style={{
-          flex: 1,
-        }}
-      >
-        {keepMounted
-          ? // Render all panels but hide inactive ones
-            tabs.map((tab) => {
-              const isActive = tab.id === activeTabId;
-              const tabPanelId = `tabpanel-${tab.id}`;
-              const tabId = `tab-${tab.id}`;
-              const content =
-                typeof tab.content === "function" ? tab.content() : tab.content;
+            return (
+              <button
+                key={tab.id}
+                ref={(el) => {
+                  tabRefs.current[tab.id] = el;
+                }}
+                id={tabId}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={tabPanelId}
+                aria-disabled={tab.disabled}
+                disabled={tab.disabled}
+                tabIndex={isActive ? 0 : -1}
+                onClick={() => handleTabClick(tab.id, tab.disabled)}
+                onKeyDown={(e) => handleKeyDown(e, index)}
+                className={`tab-button ${
+                  isActive ? "tab-button--active" : ""
+                } ${tab.disabled ? "tab-button--disabled" : ""}`}
+                style={{
+                  padding: "8px 16px",
+                  border: "none",
+                  background: isActive ? "#ffffff" : "transparent",
+                  cursor: tab.disabled ? "not-allowed" : "pointer",
+                  opacity: tab.disabled ? 0.5 : 1,
+                  borderBottom:
+                    orientation === "horizontal" && isActive
+                      ? "2px solid #1976d2"
+                      : "none",
+                  borderRight:
+                    orientation === "vertical" && isActive
+                      ? "2px solid #1976d2"
+                      : "none",
+                  marginBottom:
+                    orientation === "horizontal" && isActive ? "-1px" : "0",
+                  marginRight:
+                    orientation === "vertical" && isActive ? "-1px" : "0",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  whiteSpace: "nowrap",
+                  fontSize: "14px",
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? "#1976d2" : "#666666",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {tab.icon && <span className="tab-icon">{tab.icon}</span>}
+                <span className="tab-label">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
-              return (
+        <div
+          className="tabs-panels"
+          style={{
+            flex: 1,
+          }}
+        >
+          {keepMounted
+            ? // Render all panels but hide inactive ones
+              tabs.map((tab) => {
+                const isActive = tab.id === activeTabId;
+                const tabPanelId = `tabpanel-${tab.id}`;
+                const tabId = `tab-${tab.id}`;
+                const content =
+                  typeof tab.content === "function"
+                    ? tab.content()
+                    : tab.content;
+
+                return (
+                  <div
+                    key={tab.id}
+                    id={tabPanelId}
+                    role="tabpanel"
+                    aria-labelledby={tabId}
+                    hidden={!isActive}
+                    style={{
+                      display: isActive ? "block" : "none",
+                    }}
+                    className="tab-panel"
+                  >
+                    {content}
+                  </div>
+                );
+              })
+            : // Only render active panel
+              activeTab && (
                 <div
-                  key={tab.id}
-                  id={tabPanelId}
+                  id={`tabpanel-${activeTab.id}`}
                   role="tabpanel"
-                  aria-labelledby={tabId}
-                  hidden={!isActive}
-                  style={{
-                    display: isActive ? "block" : "none",
-                  }}
+                  aria-labelledby={`tab-${activeTab.id}`}
                   className="tab-panel"
                 >
-                  {content}
+                  {typeof activeTab.content === "function"
+                    ? activeTab.content()
+                    : activeTab.content}
                 </div>
-              );
-            })
-          : // Only render active panel
-            activeTab && (
-              <div
-                id={`tabpanel-${activeTab.id}`}
-                role="tabpanel"
-                aria-labelledby={`tab-${activeTab.id}`}
-                className="tab-panel"
-              >
-                {typeof activeTab.content === "function"
-                  ? activeTab.content()
-                  : activeTab.content}
-              </div>
-            )}
+              )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };

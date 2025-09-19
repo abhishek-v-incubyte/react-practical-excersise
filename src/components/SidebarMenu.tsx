@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 interface MenuItemBase {
   id: string;
@@ -58,6 +58,97 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({
   defaultExpanded,
   ariaLabel,
 }) => {
+  const menuItemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
+  const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
+
+  // Get all focusable menu items in order
+  const getFocusableItems = (): string[] => {
+    const focusableIds: string[] = [];
+
+    const collectFocusableItems = (items: MenuItem[]) => {
+      items.forEach((item) => {
+        if ("type" in item) {
+          if (item.type === "group" && item.children) {
+            collectFocusableItems(item.children);
+          }
+          // Skip dividers
+        } else if (!("disabled" in item && item.disabled)) {
+          focusableIds.push(item.id);
+          if (
+            "children" in item &&
+            item.children &&
+            expandedItems.has(item.id)
+          ) {
+            collectFocusableItems(item.children);
+          }
+        }
+      });
+    };
+
+    collectFocusableItems(items);
+    return focusableIds;
+  };
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent, itemId: string) => {
+    const focusableItems = getFocusableItems();
+    const currentIndex = focusableItems.indexOf(itemId);
+
+    switch (e.key) {
+      case "ArrowUp":
+        e.preventDefault();
+        if (currentIndex > 0) {
+          const prevId = focusableItems[currentIndex - 1];
+          menuItemRefs.current[prevId]?.focus();
+          setFocusedItemId(prevId);
+        }
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        if (currentIndex < focusableItems.length - 1) {
+          const nextId = focusableItems[currentIndex + 1];
+          menuItemRefs.current[nextId]?.focus();
+          setFocusedItemId(nextId);
+        }
+        break;
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        const item = findItemById(items, itemId);
+        if (item && "children" in item && item.children) {
+          toggleExpanded(itemId);
+        }
+        break;
+      case "Home":
+        e.preventDefault();
+        const firstId = focusableItems[0];
+        if (firstId) {
+          menuItemRefs.current[firstId]?.focus();
+          setFocusedItemId(firstId);
+        }
+        break;
+      case "End":
+        e.preventDefault();
+        const lastId = focusableItems[focusableItems.length - 1];
+        if (lastId) {
+          menuItemRefs.current[lastId]?.focus();
+          setFocusedItemId(lastId);
+        }
+        break;
+    }
+  };
+
+  // Helper to find item by ID
+  const findItemById = (items: MenuItem[], id: string): MenuItem | null => {
+    for (const item of items) {
+      if (item.id === id) return item;
+      if ("children" in item && item.children) {
+        const found = findItemById(item.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
   // If defaultExpanded is not provided, auto-expand all items with children
   const getInitialExpanded = () => {
     if (defaultExpanded !== undefined) {
@@ -220,6 +311,9 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({
       <li key={item.id} style={{ padding: 0 }}>
         {"href" in item && item.href && !isDisabled ? (
           <a
+            ref={(el) => {
+              menuItemRefs.current[item.id] = el;
+            }}
             href={item.href}
             onClick={handleClick}
             className={`${isActive ? "active" : ""} ${
@@ -228,6 +322,11 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({
             aria-current={isActive ? "page" : undefined}
             aria-disabled={isDisabled}
             aria-label={item.label}
+            tabIndex={
+              focusedItemId === item.id || (!focusedItemId && isActive) ? 0 : -1
+            }
+            onKeyDown={(e) => handleKeyDown(e, item.id)}
+            onFocus={() => setFocusedItemId(item.id)}
             style={itemStyle}
             onMouseEnter={(e) => {
               if (!isDisabled) {
@@ -246,7 +345,19 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({
           </a>
         ) : (
           <div
+            ref={(el) => {
+              if (!isDisabled) menuItemRefs.current[item.id] = el;
+            }}
             onClick={handleClick}
+            tabIndex={
+              !isDisabled &&
+              (focusedItemId === item.id || (!focusedItemId && isActive))
+                ? 0
+                : -1
+            }
+            onKeyDown={(e) => !isDisabled && handleKeyDown(e, item.id)}
+            onFocus={() => !isDisabled && setFocusedItemId(item.id)}
+            role={hasChildren ? "button" : undefined}
             className={`${isActive ? "active" : ""} ${
               isDisabled ? "disabled" : ""
             } ${item.className || ""}`}
@@ -290,38 +401,97 @@ export const SidebarMenu: React.FC<SidebarMenuProps> = ({
   };
 
   return (
-    <nav
-      className={`sidebar-menu ${className}`}
-      aria-label={ariaLabel}
-      style={sidebarStyle}
-    >
-      {collapsible && (
-        <button
-          onClick={onToggleCollapse}
-          aria-label="Toggle sidebar"
-          style={{
-            padding: "12px",
-            border: "none",
-            backgroundColor: "transparent",
-            cursor: "pointer",
-            textAlign: collapsed ? "center" : "right",
-            fontSize: "18px",
-          }}
-        >
-          {collapsed ? "☰" : "✕"}
-        </button>
-      )}
-      <ul
+    <>
+      {/* Skip to content link */}
+      <a
+        href="#main-content"
+        className="skip-link"
         style={{
-          listStyle: "none",
-          padding: 0,
-          margin: 0,
-          flex: 1,
-          overflowY: "auto",
+          position: "absolute",
+          left: "-9999px",
+          top: "0",
+          zIndex: 999,
+          padding: "8px",
+          backgroundColor: "#000",
+          color: "#fff",
+          textDecoration: "none",
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.left = "0";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.left = "-9999px";
         }}
       >
-        {items.map((item) => renderMenuItem(item, 0))}
-      </ul>
-    </nav>
+        Skip to main content
+      </a>
+
+      {/* Mobile styles */}
+      <style>
+        {`
+          @media (max-width: 768px) {
+            .sidebar-menu {
+              position: fixed !important;
+              left: ${collapsed ? "-250px" : "0"};
+              top: 0;
+              height: 100vh !important;
+              z-index: 1000;
+              box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            }
+            .sidebar-overlay {
+              display: ${collapsed ? "none" : "block"};
+              position: fixed;
+              inset: 0;
+              background-color: rgba(0,0,0,0.5);
+              z-index: 999;
+            }
+          }
+        `}
+      </style>
+
+      {/* Mobile overlay */}
+      {!collapsed && (
+        <div
+          className="sidebar-overlay"
+          onClick={onToggleCollapse}
+          style={{ display: "none" }}
+        />
+      )}
+
+      <nav
+        className={`sidebar-menu ${className}`}
+        aria-label={ariaLabel}
+        role="navigation"
+        style={sidebarStyle}
+      >
+        {collapsible && (
+          <button
+            onClick={onToggleCollapse}
+            aria-label="Toggle sidebar"
+            style={{
+              padding: "12px",
+              border: "none",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+              textAlign: collapsed ? "center" : "right",
+              fontSize: "18px",
+            }}
+          >
+            {collapsed ? "☰" : "✕"}
+          </button>
+        )}
+        <ul
+          style={{
+            listStyle: "none",
+            padding: 0,
+            margin: 0,
+            flex: 1,
+            overflowY: "auto",
+          }}
+        >
+          {items.map((item) => renderMenuItem(item, 0))}
+        </ul>
+      </nav>
+    </>
   );
 };

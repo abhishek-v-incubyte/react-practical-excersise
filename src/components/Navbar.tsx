@@ -4,6 +4,7 @@ interface NavLink {
   label: string;
   href: string;
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  active?: boolean;
 }
 
 interface MenuItem {
@@ -37,7 +38,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   className = "",
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navLinksRef = useRef<(HTMLAnchorElement | null)[]>([]);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -62,6 +65,34 @@ export const Navbar: React.FC<NavbarProps> = ({
     setIsDropdownOpen(!isDropdownOpen);
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
+    switch (e.key) {
+      case "ArrowLeft":
+        e.preventDefault();
+        const prevIndex = index > 0 ? index - 1 : navLinks.length - 1;
+        navLinksRef.current[prevIndex]?.focus();
+        break;
+      case "ArrowRight":
+        e.preventDefault();
+        const nextIndex = index < navLinks.length - 1 ? index + 1 : 0;
+        navLinksRef.current[nextIndex]?.focus();
+        break;
+      case "Home":
+        e.preventDefault();
+        navLinksRef.current[0]?.focus();
+        break;
+      case "End":
+        e.preventDefault();
+        navLinksRef.current[navLinks.length - 1]?.focus();
+        break;
+    }
+  };
+
   const renderLogo = () => {
     const logoImg = (
       <img src={logo.src} alt={logo.alt} style={{ height: "40px" }} />
@@ -82,6 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     <nav
       className={`navbar ${className}`}
       role="navigation"
+      aria-label="Main navigation"
       style={{
         display: "flex",
         justifyContent: "space-between",
@@ -91,29 +123,95 @@ export const Navbar: React.FC<NavbarProps> = ({
         boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
       }}
     >
+      {/* Skip Link for accessibility */}
+      <a
+        href="#main-content"
+        className="skip-link"
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          top: "10px",
+          zIndex: 999,
+          padding: "8px 16px",
+          backgroundColor: "#007bff",
+          color: "white",
+          textDecoration: "none",
+          borderRadius: "4px",
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.left = "10px";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.left = "-9999px";
+        }}
+      >
+        Skip to main content
+      </a>
+
       {/* Logo */}
       <div className="navbar-logo">{renderLogo()}</div>
 
+      {/* Mobile Menu Toggle */}
+      <button
+        className="mobile-menu-toggle"
+        onClick={toggleMobileMenu}
+        aria-label="Toggle navigation menu"
+        aria-expanded={isMobileMenuOpen}
+        style={{
+          display: "none",
+          background: "none",
+          border: "none",
+          fontSize: "24px",
+          cursor: "pointer",
+          padding: "8px",
+        }}
+      >
+        {isMobileMenuOpen ? "✕" : "☰"}
+      </button>
+
       {/* Navigation Links */}
-      <div className="navbar-links" style={{ display: "flex", gap: "20px" }}>
-        {navLinks.map((link) => (
+      <div
+        className="navbar-links"
+        style={{
+          display: isMobileMenuOpen ? "flex" : "flex",
+          gap: "20px",
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
+        {navLinks.map((link, index) => (
           <a
             key={link.label}
+            ref={(el) => {
+              if (el) navLinksRef.current[index] = el;
+            }}
             href={link.href}
-            onClick={link.onClick}
+            onClick={(e) => {
+              if (link.onClick) {
+                e.preventDefault();
+                link.onClick(e);
+              }
+            }}
+            aria-current={link.active ? "page" : undefined}
+            onKeyDown={(e) => handleKeyDown(e, index)}
             style={{
               textDecoration: "none",
-              color: "#333",
-              fontWeight: "500",
+              color: link.active ? "#007bff" : "#333",
+              fontWeight: link.active ? "600" : "500",
               padding: "5px 10px",
               borderRadius: "4px",
               transition: "background-color 0.2s",
+              borderBottom: link.active ? "2px solid #007bff" : "none",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#e9ecef";
+              if (!link.active) {
+                e.currentTarget.style.backgroundColor = "#e9ecef";
+              }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
+              if (!link.active) {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }
             }}
           >
             {link.label}
