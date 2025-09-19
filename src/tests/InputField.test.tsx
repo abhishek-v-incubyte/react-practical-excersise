@@ -83,7 +83,7 @@ describe("InputField", () => {
     render(
       <InputField label="Required Field" name="required" required={true} />
     );
-    const input = screen.getByLabelText("Required Field") as HTMLInputElement;
+    const input = screen.getByLabelText(/Required Field/i) as HTMLInputElement;
     expect(input).toBeRequired();
   });
 
